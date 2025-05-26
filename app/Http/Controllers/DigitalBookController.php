@@ -140,8 +140,7 @@ class DigitalBookController extends Controller
         ]);
 
         // Simpan file buku
-        $fileBukuPath = $request->file('file_buku')->store('uploads/buku', 'google');
-        $id=Storage::disk('google')->getAdapter()->getMetadata($fileBukuPath)->extraMetadata()['id'];
+        $fileBukuPath = $request->file('file_buku')->store('uploads/buku', 'public');
 
         // Simpan cover buku
         $coverBukuPath = $request->file('cover_buku')->store('uploads/covers', 'public');
@@ -154,7 +153,7 @@ class DigitalBookController extends Controller
         $buku->penerbit = $request->input('penerbit');
         $buku->tahun_terbit = $request->input('tahun_terbit');
         $buku->sinopsis = $request->input('sinopsis_buku');
-        $buku->file_buku = $id;
+        $buku->file_buku = $fileBukuPath;
         $buku->cover_buku = $coverBukuPath;
 
         // Simpan data ke database
@@ -190,13 +189,12 @@ class DigitalBookController extends Controller
         if ($request->hasFile('file_buku')) {
             // Hapus file lama
             Storage::disk('public')->delete($buku->file_buku);
-            Storage::disk('google')->delete($buku->file_buku);
 
             // Simpan file baru
             // Upload Buku ke Goole Drive
-            $fileBukuPath = $request->file('file_buku')->store('uploads/buku', 'google');
+            $fileBukuPath = $request->file('file_buku')->store('uploads/buku', 'public');
 
-            $buku->file_buku = $id;
+            $buku->file_buku = $fileBukuPath;
         }
 
         // Update cover buku jika ada yang baru
@@ -221,7 +219,7 @@ class DigitalBookController extends Controller
         $buku = Buku_Digital::findOrFail($id);
         $buku->delete();
 
-        Storage::disk('google')->delete($buku->file_buku);
+        Storage::disk('public')->delete($buku->file_buku);
 
         return redirect()->back()->with('success', 'Data buku berhasil dihapus!');
     }
@@ -234,10 +232,7 @@ class DigitalBookController extends Controller
         // Tambahkan 1 ke jumlah dibaca
         $buku->increment('jumlah_dibaca');
 
-        // Kembalikan response yang mengandung URL file buku
-        return response()->json([
-            'file_url' => "https://drive.google.com/file/d/{$buku->file_buku}/preview"
-        ]);
+        return view('feature.buku.baca-buku', compact('buku'));
     }
 
     public function filterByJenis(Request $request, $id)
